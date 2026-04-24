@@ -3,22 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>FxW – Main Door Check-In</title>
+<title>FxW – Banana Station</title>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
 /* ══════════════════════════════════════════════════════════
-   FITNESS x WORSHIP  –  MAIN DOOR SCANNER
-   Metallic Blue (#A9D1EA) + Soft Peach (#F4B8B8)
+   FITNESS x WORSHIP  –  BANANA / SWAG STATION
+   Bright Yellow (#FDE047) theme — visually distinct
+   from Main Door scanner (blue/peach)
    ══════════════════════════════════════════════════════════ */
 :root{
-  --blue:#A9D1EA;
-  --blue-dim:rgba(169,209,234,.12);
-  --blue-border:rgba(169,209,234,.28);
-  --peach:#F4B8B8;
-  --peach-dim:rgba(244,184,184,.12);
+  --yellow:#FDE047;
+  --yellow-dim:rgba(253,224,71,.1);
+  --yellow-border:rgba(253,224,71,.28);
+  --yellow-dark:#ca9a04;
   --green:#4ade80;
   --green-dim:rgba(74,222,128,.1);
   --red:#f87171;
+  --peach:#F4B8B8;
+  --orange:#fb923c;
   --bg:#0B0B0B;
   --surface:#1A1A1E;
   --surface2:#111113;
@@ -30,9 +32,6 @@
   --head:'Archivo Black',sans-serif;
   --ease:cubic-bezier(.4,0,.2,1);
   --bounce:cubic-bezier(.22,.68,0,1.2);
-
-  /* WEBHOOK – replace with your deployed Apps Script URL */
-  --webhook-url:'';
 }
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -43,24 +42,24 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
   display:flex;align-items:center;justify-content:space-between;
   padding:12px 16px;
   background:var(--surface);
-  border-bottom:2px solid var(--blue);
+  border-bottom:3px solid var(--yellow);
   position:fixed;top:0;left:0;right:0;z-index:100;
 }
 .topbar-title{
   font-family:var(--head);font-size:.95rem;font-weight:900;
-  color:var(--blue);letter-spacing:.08em;text-transform:uppercase;
+  color:var(--yellow);letter-spacing:.08em;text-transform:uppercase;
 }
 .topbar-sub{font-size:.6rem;color:var(--text-lo);letter-spacing:.12em;text-transform:uppercase;margin-top:1px}
 
 .counter-badge{
   display:flex;flex-direction:column;align-items:flex-end;
-  background:var(--blue-dim);border:1px solid var(--blue-border);
-  padding:6px 12px;
-  min-width:110px;
+  background:var(--yellow-dim);border:1px solid var(--yellow-border);
+  padding:6px 12px;min-width:110px;
 }
-.counter-label{font-size:.55rem;color:rgba(169,209,234,.6);letter-spacing:.14em;text-transform:uppercase}
+.counter-label{font-size:.55rem;color:rgba(253,224,71,.6);letter-spacing:.14em;text-transform:uppercase}
 .counter-val{
-  font-family:var(--head);font-size:1.3rem;font-weight:900;color:var(--blue);line-height:1;letter-spacing:.04em;
+  font-family:var(--head);font-size:1.3rem;font-weight:900;
+  color:var(--yellow);line-height:1;letter-spacing:.04em;
 }
 .counter-val span{font-size:.75rem;color:var(--text-mid);font-family:var(--font)}
 
@@ -68,20 +67,18 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .tabs{
   display:flex;
   position:fixed;top:72px;left:0;right:0;z-index:99;
-  background:var(--surface2);
-  border-bottom:1px solid var(--border);
+  background:var(--surface2);border-bottom:1px solid var(--border);
 }
 .tab{
   flex:1;padding:12px 0;
   font-family:var(--font);font-size:.72rem;font-weight:700;
   letter-spacing:.12em;text-transform:uppercase;
   color:var(--text-lo);background:transparent;border:none;cursor:pointer;
-  border-bottom:3px solid transparent;
-  transition:all .2s var(--ease);
+  border-bottom:3px solid transparent;transition:all .2s var(--ease);
 }
-.tab.active{color:var(--blue);border-bottom-color:var(--blue);background:var(--blue-dim)}
+.tab.active{color:var(--yellow);border-bottom-color:var(--yellow);background:var(--yellow-dim)}
 
-/* ── MAIN CONTENT ────────────────────────────────────────── */
+/* ── PANES ───────────────────────────────────────────────── */
 .pane{
   position:fixed;top:117px;left:0;right:0;bottom:0;
   overflow-y:auto;-webkit-overflow-scrolling:touch;
@@ -93,51 +90,63 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 #pane-scanner{
   display:none;
   flex-direction:column;align-items:center;
-  padding:16px 16px 80px;
-  gap:14px;
+  padding:16px 16px 80px;gap:14px;
 }
 #pane-scanner.active{display:flex}
 
 .scan-frame{
   width:100%;max-width:340px;
-  border:3px solid var(--blue);
-  box-shadow:0 0 0 1px rgba(169,209,234,.15),0 0 32px rgba(169,209,234,.12);
-  position:relative;overflow:hidden;
-  background:#000;
+  border:3px solid var(--yellow);
+  box-shadow:0 0 0 1px rgba(253,224,71,.12),0 0 32px rgba(253,224,71,.1);
+  position:relative;overflow:hidden;background:#000;
 }
 .scan-frame::before,.scan-frame::after{
   content:'';position:absolute;width:24px;height:24px;z-index:5;pointer-events:none;
 }
-.scan-frame::before{top:6px;left:6px;border-top:3px solid var(--blue);border-left:3px solid var(--blue)}
-.scan-frame::after{top:6px;right:6px;border-top:3px solid var(--blue);border-right:3px solid var(--blue)}
+.scan-frame::before{top:6px;left:6px;border-top:3px solid var(--yellow);border-left:3px solid var(--yellow)}
+.scan-frame::after{top:6px;right:6px;border-top:3px solid var(--yellow);border-right:3px solid var(--yellow)}
 .scan-corner-bl,.scan-corner-br{
   position:absolute;width:24px;height:24px;z-index:5;pointer-events:none;
 }
-.scan-corner-bl{bottom:6px;left:6px;border-bottom:3px solid var(--blue);border-left:3px solid var(--blue)}
-.scan-corner-br{bottom:6px;right:6px;border-bottom:3px solid var(--blue);border-right:3px solid var(--blue)}
+.scan-corner-bl{bottom:6px;left:6px;border-bottom:3px solid var(--yellow);border-left:3px solid var(--yellow)}
+.scan-corner-br{bottom:6px;right:6px;border-bottom:3px solid var(--yellow);border-right:3px solid var(--yellow)}
 
 #reader{width:100%;background:#000}
+
 .scan-line{
   position:absolute;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,transparent,var(--blue),transparent);
-  animation:scanmove 2s ease-in-out infinite;
-  z-index:4;pointer-events:none;
-  box-shadow:0 0 8px rgba(169,209,234,.5);
+  background:linear-gradient(90deg,transparent,var(--yellow),transparent);
+  animation:scanmove 2s ease-in-out infinite;z-index:4;pointer-events:none;
+  box-shadow:0 0 8px rgba(253,224,71,.4);
 }
 @keyframes scanmove{0%{top:10%}100%{top:88%}}
+
+/* ── BANANA EMOJI BURST ──────────────────────────────────── */
+.banana-burst{
+  position:fixed;inset:0;z-index:400;pointer-events:none;overflow:hidden;display:none;
+}
+.banana-burst.on{display:block}
+.bana{
+  position:absolute;top:-60px;
+  font-size:2rem;
+  animation:bfall var(--bd,1.8s) var(--bdd,0s) ease-in forwards;
+}
+@keyframes bfall{
+  0%{transform:translateY(0) rotate(0deg);opacity:1}
+  80%{opacity:.9}
+  100%{transform:translateY(110vh) rotate(var(--br,360deg));opacity:0}
+}
 
 /* Status card */
 .status-card{
   width:100%;max-width:340px;
   padding:16px 18px;
-  border:2px solid var(--border);
-  background:var(--surface);
-  min-height:80px;
-  transition:border-color .3s,background .3s;
+  border:2px solid var(--border);background:var(--surface);
+  min-height:80px;transition:border-color .3s,background .3s;
 }
 .status-card.ok{border-color:var(--green);background:rgba(74,222,128,.06)}
 .status-card.err{border-color:var(--peach);background:rgba(244,184,184,.06)}
-.status-card.warn{border-color:#facc15;background:rgba(250,204,21,.06)}
+.status-card.warn{border-color:var(--yellow);background:rgba(253,224,71,.05)}
 .status-idle{color:var(--text-lo);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;text-align:center;padding:8px 0}
 .status-name{font-family:var(--head);font-size:1.1rem;font-weight:900;color:var(--text);margin-bottom:4px;text-transform:uppercase}
 .status-email{font-size:.72rem;color:var(--text-mid);margin-bottom:8px;word-break:break-all}
@@ -147,43 +156,50 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 }
 .status-badge.ok{background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);color:var(--green)}
 .status-badge.err{background:rgba(244,184,184,.1);border:1px solid rgba(244,184,184,.3);color:var(--peach)}
-.status-badge.warn{background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.3);color:#facc15}
+.status-badge.warn{background:rgba(253,224,71,.1);border:1px solid rgba(253,224,71,.3);color:var(--yellow)}
 .status-meta{font-size:.68rem;color:var(--text-lo);margin-top:6px;letter-spacing:.06em}
 
-/* Cooldown overlay */
-.cooldown-bar{
-  width:100%;max-width:340px;
-  height:3px;background:var(--border);overflow:hidden;
-}
-.cooldown-fill{height:100%;background:var(--blue);width:0%;transition:width .1s linear}
+/* Cooldown bar */
+.cooldown-bar{width:100%;max-width:340px;height:3px;background:var(--border);overflow:hidden}
+.cooldown-fill{height:100%;background:var(--yellow);width:0%;transition:width .1s linear}
 
-/* Manual scan input */
+/* Manual input */
 .manual-wrap{width:100%;max-width:340px;display:flex;gap:8px}
 .manual-input{
   flex:1;background:var(--surface2);border:2px solid var(--border);
   padding:10px 14px;color:var(--text);font-family:var(--font);font-size:.82rem;
   outline:none;transition:border-color .2s;
 }
-.manual-input:focus{border-color:var(--blue)}
+.manual-input:focus{border-color:var(--yellow)}
 .manual-input::placeholder{color:var(--text-lo)}
 .btn-manual{
-  background:var(--blue);color:#000;border:none;
+  background:var(--yellow);color:#000;border:none;
   padding:10px 16px;font-family:var(--head);font-size:.75rem;font-weight:900;
   letter-spacing:.08em;text-transform:uppercase;cursor:pointer;
   transition:background .2s;white-space:nowrap;
 }
-.btn-manual:hover{background:#8ec8e6}
+.btn-manual:hover{background:#fef08a}
 
 /* Camera toggle */
 .btn-cam{
   display:flex;align-items:center;gap:8px;
-  background:transparent;border:2px solid var(--blue-border);
-  padding:10px 18px;color:var(--blue);
-  font-family:var(--font);font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-  cursor:pointer;transition:all .2s;
+  background:transparent;border:2px solid var(--yellow-border);
+  padding:10px 18px;color:var(--yellow);
+  font-family:var(--font);font-size:.72rem;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .2s;
 }
-.btn-cam:hover{background:var(--blue-dim);border-color:var(--blue)}
-.btn-cam.active{background:var(--blue-dim);border-color:var(--blue)}
+.btn-cam:hover{background:var(--yellow-dim);border-color:var(--yellow)}
+.btn-cam.active{background:var(--yellow-dim);border-color:var(--yellow)}
+
+/* Requirement notice */
+.req-notice{
+  width:100%;max-width:340px;
+  background:rgba(251,146,60,.06);border:1px solid rgba(251,146,60,.25);
+  border-left:3px solid var(--orange);
+  padding:10px 14px;font-size:.68rem;color:rgba(251,146,60,.85);
+  letter-spacing:.06em;text-transform:uppercase;line-height:1.6;
+}
+.req-notice strong{color:var(--orange)}
 
 /* ── ROSTER PANE ─────────────────────────────────────────── */
 #pane-roster{padding:12px 12px 80px;display:none}
@@ -202,17 +218,15 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .roster-search-wrap input::placeholder{color:var(--text-lo)}
 .roster-search-icon{font-size:1rem;color:var(--text-lo)}
 
-.roster-stats{
-  display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;
-}
+.roster-stats{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
 .roster-stat{
   flex:1;min-width:80px;
   background:var(--surface);border:1px solid var(--border);
-  border-top:2px solid var(--blue);
+  border-top:2px solid var(--yellow);
   padding:10px 12px;
   font-size:.68rem;color:var(--text-lo);letter-spacing:.08em;text-transform:uppercase;
 }
-.roster-stat strong{display:block;font-family:var(--head);font-size:1.1rem;color:var(--blue);margin-bottom:2px}
+.roster-stat strong{display:block;font-family:var(--head);font-size:1.1rem;color:var(--yellow);margin-bottom:2px}
 
 .roster-empty{text-align:center;padding:40px 16px;color:var(--text-lo);font-size:.8rem;letter-spacing:.1em;text-transform:uppercase}
 
@@ -223,35 +237,56 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
   display:flex;align-items:center;gap:10px;
   transition:border-color .2s;
 }
-.attendee-row.checked-in{border-left-color:var(--green)}
-.attendee-row.partial{border-left-color:#facc15}
+.attendee-row.given{border-left-color:var(--green)}
+.attendee-row.partial{border-left-color:var(--yellow)}
+.attendee-row.not-checked-in{opacity:.45}
 .attendee-info{flex:1;min-width:0}
 .attendee-name{font-family:var(--head);font-size:.88rem;font-weight:900;color:var(--text);text-transform:uppercase;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .attendee-email{font-size:.65rem;color:var(--text-lo);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .attendee-seats{font-size:.62rem;color:var(--text-mid);margin-top:3px;letter-spacing:.06em}
-.ci-tag{
+.bn-tag{
   white-space:nowrap;padding:4px 10px;
   font-size:.62rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border:1px solid;
+  flex-shrink:0;
 }
-.ci-tag.full{color:var(--green);border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.08)}
-.ci-tag.none{color:var(--blue);border-color:var(--blue-border);background:var(--blue-dim);cursor:pointer;transition:background .2s}
-.ci-tag.none:hover{background:rgba(169,209,234,.22)}
-.ci-tag.partial{color:#facc15;border-color:rgba(250,204,21,.3);background:rgba(250,204,21,.08);cursor:pointer}
+.bn-tag.full{color:var(--green);border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.08)}
+.bn-tag.give{color:var(--yellow);border-color:var(--yellow-border);background:var(--yellow-dim);cursor:pointer;transition:background .2s}
+.bn-tag.give:hover{background:rgba(253,224,71,.2)}
+.bn-tag.partial{color:var(--orange);border-color:rgba(251,146,60,.3);background:rgba(251,146,60,.08);cursor:pointer}
+.bn-tag.blocked{color:var(--text-lo);border-color:var(--border);background:transparent;cursor:not-allowed}
+
+/* ── SETTINGS PANE ───────────────────────────────────────── */
+#pane-settings{padding:14px;display:none}
+#pane-settings.active{display:block}
+.settings-label{font-size:.6rem;color:var(--text-lo);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
+.webhook-input{
+  width:100%;background:var(--surface2);border:2px solid var(--border);
+  padding:10px 14px;color:var(--text);font-family:var(--font);font-size:.78rem;
+  outline:none;margin-bottom:10px;transition:border-color .2s;
+}
+.webhook-input:focus{border-color:var(--yellow)}
+.btn-set{
+  background:var(--yellow);color:#000;border:none;
+  padding:10px 20px;font-family:var(--head);font-size:.78rem;font-weight:900;
+  letter-spacing:.1em;text-transform:uppercase;cursor:pointer;width:100%;
+  transition:background .2s;
+}
+.btn-set:hover{background:#fef08a}
 
 /* ── TOAST ───────────────────────────────────────────────── */
 .toast{
   position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
   background:var(--surface);border:2px solid var(--border);
-  padding:10px 22px;font-size:.78rem;color:var(--text);white-space:nowrap;
+  padding:10px 22px;font-size:.78rem;color:var(--text);
   box-shadow:4px 4px 0 rgba(0,0,0,.5);z-index:500;
   transition:transform .3s var(--bounce),opacity .3s;opacity:0;
   font-family:var(--font);letter-spacing:.06em;text-transform:uppercase;
-  max-width:calc(100vw - 32px);white-space:normal;text-align:center;
+  max-width:calc(100vw - 32px);text-align:center;
 }
 .toast.on{transform:translateX(-50%) translateY(0);opacity:1}
 .toast.ok{border-color:var(--green);color:var(--green)}
 .toast.err{border-color:var(--peach);color:var(--peach)}
-.toast.warn{border-color:#facc15;color:#facc15}
+.toast.warn{border-color:var(--yellow);color:var(--yellow)}
 
 /* ── LOADER ──────────────────────────────────────────────── */
 .loader{
@@ -259,53 +294,32 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
   display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;
 }
 .loader.on{display:flex}
-.spin{width:36px;height:36px;border:3px solid rgba(169,209,234,.1);border-top-color:var(--blue);border-radius:50%;animation:sp 1s linear infinite}
+.spin{width:36px;height:36px;border:3px solid rgba(253,224,71,.1);border-top-color:var(--yellow);border-radius:50%;animation:sp 1s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 .loader-txt{font-size:.72rem;color:var(--text-lo);letter-spacing:.14em;text-transform:uppercase}
-
-/* ── WEBHOOK CONFIG BANNER ───────────────────────────────── */
-.webhook-banner{
-  background:rgba(250,204,21,.08);border:1px solid rgba(250,204,21,.3);
-  padding:10px 14px;margin:0 0 12px;
-  font-size:.68rem;color:#facc15;letter-spacing:.06em;text-transform:uppercase;
-  display:flex;align-items:center;gap:8px;
-}
-.webhook-input{
-  width:100%;background:var(--surface2);border:2px solid var(--border);
-  padding:10px 14px;color:var(--text);font-family:var(--font);font-size:.78rem;
-  outline:none;margin-bottom:10px;
-  transition:border-color .2s;
-}
-.webhook-input:focus{border-color:var(--blue)}
-.btn-set{
-  background:var(--blue);color:#000;border:none;
-  padding:10px 20px;font-family:var(--head);font-size:.78rem;font-weight:900;
-  letter-spacing:.1em;text-transform:uppercase;cursor:pointer;width:100%;
-  transition:background .2s;
-}
-.btn-set:hover{background:#8ec8e6}
-.settings-section{padding:14px 14px 0;border-top:1px solid var(--border)}
-.settings-label{font-size:.6rem;color:var(--text-lo);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
 </style>
 </head>
 <body>
 
+<!-- BANANA BURST OVERLAY -->
+<div class="banana-burst" id="banana-burst"></div>
+
 <!-- TOP BAR -->
 <div class="topbar">
   <div>
-    <div class="topbar-title">🚪 Main Door</div>
-    <div class="topbar-sub">FITNESS x WORSHIP · Check-In</div>
+    <div class="topbar-title">🍌 Banana Station</div>
+    <div class="topbar-sub">FITNESS x WORSHIP · Swag Distribution</div>
   </div>
   <div class="counter-badge">
-    <div class="counter-label">Tribe</div>
-    <div class="counter-val" id="counter-val">–&nbsp;<span>/ 100</span></div>
+    <div class="counter-label">Given</div>
+    <div class="counter-val" id="counter-val">–&nbsp;<span>total</span></div>
   </div>
 </div>
 
 <!-- TABS -->
 <div class="tabs">
   <button class="tab active" id="tab-scanner" onclick="switchTab('scanner')">📷 Scanner</button>
-  <button class="tab" id="tab-roster" onclick="switchTab('roster')">📋 Roster</button>
+  <button class="tab" id="tab-roster"  onclick="switchTab('roster')">📋 Roster</button>
   <button class="tab" id="tab-settings" onclick="switchTab('settings')">⚙️ Setup</button>
 </div>
 
@@ -318,12 +332,18 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
     <div class="scan-corner-br"></div>
   </div>
   <div class="cooldown-bar"><div class="cooldown-fill" id="cooldown-fill"></div></div>
+
+  <div class="req-notice">
+    ⚠️ <strong>Check-In Required:</strong> Attendee must have checked in at the Main Door before receiving a banana.
+  </div>
+
   <div class="status-card" id="status-card">
     <div class="status-idle">Point camera at attendee's QR code</div>
   </div>
+
   <div class="manual-wrap">
     <input class="manual-input" type="email" id="manual-email" placeholder="Or type email & press →" autocomplete="off" autocapitalize="off">
-    <button class="btn-manual" onclick="manualCheckIn()">→</button>
+    <button class="btn-manual" onclick="manualGive()">→</button>
   </div>
   <button class="btn-cam" id="btn-cam" onclick="toggleCamera()">📷 Start Camera</button>
 </div>
@@ -336,7 +356,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
   </div>
   <div class="roster-stats">
     <div class="roster-stat"><strong id="stat-total">–</strong>Registered</div>
-    <div class="roster-stat"><strong id="stat-checked">–</strong>Checked In</div>
+    <div class="roster-stat"><strong id="stat-given">–</strong>Bananas Given</div>
     <div class="roster-stat"><strong id="stat-pending">–</strong>Pending</div>
   </div>
   <div id="roster-list"></div>
@@ -349,22 +369,33 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
     <input class="webhook-input" type="url" id="webhook-url-input" placeholder="https://script.google.com/macros/s/…/exec">
     <button class="btn-set" onclick="saveWebhook()">Save & Test Connection</button>
     <div id="webhook-status" style="margin-top:10px;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-lo)"></div>
+
+    <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border)">
+      <div class="settings-label">About This Station</div>
+      <div style="font-size:.7rem;color:var(--text-lo);line-height:1.8;letter-spacing:.04em">
+        This is the <strong style="color:var(--yellow)">Banana / Swag Distribution</strong> station.<br>
+        Attendees <strong style="color:var(--text-mid)">must have checked in at the Main Door first</strong>.<br>
+        The webhook is the same URL used for the Main Door scanner.
+      </div>
+    </div>
   </div>
 </div>
 
 <!-- TOAST + LOADER -->
 <div class="toast" id="toast"></div>
-<div class="loader" id="loader"><div class="spin"></div><div class="loader-txt" id="loader-txt">Processing…</div></div>
+<div class="loader" id="loader">
+  <div class="spin"></div>
+  <div class="loader-txt" id="loader-txt">Processing…</div>
+</div>
 
 <script>
 /* ══════════════════════════════════════════════════════════
    CONFIG
    ══════════════════════════════════════════════════════════ */
-var WEBHOOK_URL = localStorage.getItem('fxw_maindoor_webhook') || '';
-var TOTAL_SEATS = 100;
-var COOLDOWN_MS = 2000;
-var rosterData  = [];       // full roster from server
-var scanCooldown = false;
+var WEBHOOK_URL   = localStorage.getItem('fxw_banana_webhook') || '';
+var COOLDOWN_MS   = 2000;
+var rosterData    = [];
+var scanCooldown  = false;
 var cameraRunning = false;
 var html5QrCode   = null;
 var _toastTimer   = null;
@@ -375,7 +406,7 @@ var _pollTimer     = null;
    INIT
    ══════════════════════════════════════════════════════════ */
 window.addEventListener('DOMContentLoaded', function() {
-  var saved = localStorage.getItem('fxw_maindoor_webhook');
+  var saved = localStorage.getItem('fxw_banana_webhook');
   if (saved) {
     document.getElementById('webhook-url-input').value = saved;
     WEBHOOK_URL = saved;
@@ -396,9 +427,7 @@ function switchTab(name) {
     document.getElementById('pane-'+t).classList.toggle('active', t===name);
   });
   if (name === 'roster') filterRoster();
-  if (name !== 'scanner' && cameraRunning) {
-    stopCamera();
-  }
+  if (name !== 'scanner' && cameraRunning) stopCamera();
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -414,7 +443,6 @@ function startCamera() {
   html5QrCode = new Html5Qrcode('reader');
   Html5Qrcode.getCameras().then(function(devices) {
     if (!devices || devices.length === 0) { toast('No camera found', 'err'); return; }
-    // prefer back camera
     var cam = devices.find(function(d) { return /back|rear|environment/i.test(d.label); }) || devices[devices.length - 1];
     html5QrCode.start(
       cam.id,
@@ -429,7 +457,7 @@ function startCamera() {
     }).catch(function(err) {
       toast('Camera error: ' + err, 'err');
     });
-  }).catch(function(err) {
+  }).catch(function() {
     toast('Camera access denied', 'err');
   });
 }
@@ -456,12 +484,12 @@ function onScanResult(rawText) {
     return;
   }
   startCooldown();
-  processCheckIn(email);
+  processBanana(email);
 }
 
 function startCooldown() {
   scanCooldown = true;
-  var fill = document.getElementById('cooldown-fill');
+  var fill  = document.getElementById('cooldown-fill');
   var start = Date.now();
   fill.style.width = '100%';
   clearInterval(_cooldownTimer);
@@ -478,80 +506,96 @@ function startCooldown() {
 }
 
 /* ══════════════════════════════════════════════════════════
-   MANUAL CHECK-IN
+   MANUAL ENTRY
    ══════════════════════════════════════════════════════════ */
-function manualCheckIn() {
+function manualGive() {
   var email = document.getElementById('manual-email').value.trim().toLowerCase();
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     toast('Enter a valid email', 'err'); return;
   }
-  processCheckIn(email);
+  processBanana(email);
   document.getElementById('manual-email').value = '';
 }
 document.getElementById('manual-email').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') manualCheckIn();
+  if (e.key === 'Enter') manualGive();
 });
 
 /* ══════════════════════════════════════════════════════════
-   CHECK-IN LOGIC  –  with Group Pass prompt
+   BANANA DISTRIBUTION LOGIC  –  Group prompt + check-in gate
    ══════════════════════════════════════════════════════════ */
-function processCheckIn(email) {
+function processBanana(email) {
   if (!WEBHOOK_URL) { toast('No webhook URL configured', 'err'); return; }
 
-  // Find attendee in local roster for group info
   var attendee = rosterData.find(function(a) { return a.email === email; });
 
   if (!attendee) {
-    // Try fetching live anyway
-    sendCheckIn(email, 1);
+    // Not in local cache — send to server which will validate check-in
+    sendBanana(email, 1);
     return;
   }
 
-  var remaining = attendee.totalSeats - attendee.checkedIn;
+  // Gate: must be checked in at main door
+  if (!attendee.checkInStatus || !attendee.checkInStatus.match(/CHECKED IN:/)) {
+    setStatusCard({
+      type: 'err',
+      name: attendee.name,
+      email: email,
+      badge: 'NOT CHECKED IN',
+      badgeType: 'err',
+      meta: 'This person has not checked in at the Main Door yet.'
+    });
+    toast('Must check in at Main Door first', 'err');
+    return;
+  }
+
+  var remaining = attendee.totalSeats - attendee.bananasGiven;
+
   if (remaining <= 0) {
     setStatusCard({
       type: 'warn',
       name: attendee.name,
       email: email,
-      badge: 'ALREADY FULLY CHECKED IN',
+      badge: '🍌 ALL BANANAS GIVEN',
       badgeType: 'warn',
-      meta: 'All ' + attendee.totalSeats + ' seat(s) scanned.'
+      meta: 'All ' + attendee.totalSeats + ' banana(s) already distributed.'
     });
+    toast('All bananas already given', 'warn');
     return;
   }
 
-  // Group pass – ask quantity if more than 1 remaining
+  // Group prompt if more than 1 remaining
   var qty = 1;
   if (remaining > 1) {
     var answer = prompt(
-      'Group Pass\n\n' + attendee.name + ' has ' + remaining + ' seat(s) remaining.\n\nHow many are checking in right now?',
+      'Group Pass\n\n' + attendee.name + ' is owed ' + remaining + ' banana(s).\n\nHow many are you giving them right now?',
       remaining
     );
     if (answer === null) return; // cancelled
     qty = parseInt(answer);
     if (isNaN(qty) || qty < 1) { toast('Invalid quantity', 'err'); return; }
-    if (qty > remaining) { toast('Entered more than remaining seats (' + remaining + ')', 'err'); return; }
+    if (qty > remaining) { toast('Cannot give more than remaining (' + remaining + ')', 'err'); return; }
   }
 
-  sendCheckIn(email, qty);
+  sendBanana(email, qty);
 }
 
-function sendCheckIn(email, quantity) {
-  setLoading(true, 'Checking in…');
-  apiPost({ action: 'checkIn', email: email, quantity: quantity }, function(res) {
+function sendBanana(email, quantity) {
+  setLoading(true, 'Distributing banana(s)…');
+  apiPost({ action: 'checkBanana', email: email, quantity: quantity }, function(res) {
     setLoading(false);
     if (res.success) {
       setStatusCard({
         type: 'ok',
         name: res.name || email,
         email: email,
-        badge: 'CHECKED IN  ' + res.checkedIn + ' / ' + res.totalSeats,
+        badge: '🍌 GIVEN  ' + res.given + ' / ' + res.totalSeats,
         badgeType: 'ok',
-        meta: res.checkedIn < res.totalSeats
-          ? (res.totalSeats - res.checkedIn) + ' seat(s) still to check in'
-          : 'Full group checked in ✓'
+        meta: res.given < res.totalSeats
+          ? (res.totalSeats - res.given) + ' banana(s) still to give'
+          : 'Full group served ✓'
       });
-      toast('✓ ' + (res.name || email), 'ok');
+      toast('🍌 Banana(s) given to ' + (res.name || email), 'ok');
+      launchBananaBurst();
       loadRoster();
     } else {
       setStatusCard({
@@ -560,9 +604,9 @@ function sendCheckIn(email, quantity) {
         email: '',
         badge: 'REJECTED',
         badgeType: 'err',
-        meta: res.error || 'Check-in failed'
+        meta: res.error || 'Could not distribute banana'
       });
-      toast(res.error || 'Check-in failed', 'err');
+      toast(res.error || 'Distribution failed', 'err');
     }
   });
 }
@@ -588,23 +632,26 @@ function loadRoster() {
   apiPost({ action: 'getRoster' }, function(res) {
     if (!res.success) return;
     rosterData = res.roster || [];
-    updateCounter(res.totalCheckedIn, TOTAL_SEATS);
+    updateCounter(res.totalBananas);
     updateStats(res);
     filterRoster();
   });
 }
 
-function updateCounter(checkedIn, total) {
+function updateCounter(totalBananas) {
   var el = document.getElementById('counter-val');
-  el.innerHTML = (checkedIn !== undefined ? checkedIn : '–') + '&nbsp;<span>/ ' + total + '</span>';
+  el.innerHTML = (totalBananas !== undefined ? totalBananas : '–') + '&nbsp;<span>total</span>';
 }
 
 function updateStats(res) {
   var total   = rosterData.length;
-  var checked = rosterData.filter(function(a) { return a.checkedIn >= a.totalSeats; }).length;
-  document.getElementById('stat-total').textContent   = total;
-  document.getElementById('stat-checked').textContent = res.totalCheckedIn !== undefined ? res.totalCheckedIn : '–';
-  document.getElementById('stat-pending').textContent = Math.max(0, total - checked);
+  var allGiven = rosterData.filter(function(a) { return a.bananasGiven >= a.totalSeats; }).length;
+  var pending  = rosterData.filter(function(a) {
+    return a.bananasGiven < a.totalSeats && a.checkInStatus && a.checkInStatus.match(/CHECKED IN:/);
+  }).length;
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-given').textContent  = res.totalBananas !== undefined ? res.totalBananas : '–';
+  document.getElementById('stat-pending').textContent = pending;
 }
 
 function filterRoster() {
@@ -623,37 +670,70 @@ function renderRoster(list) {
     el.innerHTML = '<div class="roster-empty">' + (rosterData.length === 0 ? 'No data loaded yet' : 'No results') + '</div>';
     return;
   }
-  // Sort: not-checked-in first
-  list = list.slice().sort(function(a,b) {
-    var aPct = a.checkedIn / a.totalSeats;
-    var bPct = b.checkedIn / b.totalSeats;
-    return aPct - bPct;
+
+  // Sort: checked-in-but-not-given first, then not-checked-in, then fully given
+  list = list.slice().sort(function(a, b) {
+    var aChecked  = a.checkInStatus && a.checkInStatus.match(/CHECKED IN:/);
+    var bChecked  = b.checkInStatus && b.checkInStatus.match(/CHECKED IN:/);
+    var aFullGiven = a.bananasGiven >= a.totalSeats;
+    var bFullGiven = b.bananasGiven >= b.totalSeats;
+
+    // Priority: eligible (checked in, not fully given) > not checked in > fully given
+    var aPrio = aFullGiven ? 2 : (aChecked ? 0 : 1);
+    var bPrio = bFullGiven ? 2 : (bChecked ? 0 : 1);
+    return aPrio - bPrio;
   });
+
   el.innerHTML = list.map(function(a) {
-    var isFull    = a.checkedIn >= a.totalSeats;
-    var isPartial = a.checkedIn > 0 && a.checkedIn < a.totalSeats;
-    var rowClass  = isFull ? 'attendee-row checked-in' : isPartial ? 'attendee-row partial' : 'attendee-row';
-    var tagClass  = isFull ? 'ci-tag full' : isPartial ? 'ci-tag partial' : 'ci-tag none';
-    var tagText   = isFull
-      ? 'CHECKED IN'
-      : isPartial
-        ? a.checkedIn + '/' + a.totalSeats + ' — TAP'
-        : 'CHECK IN';
-    var onclick   = isFull ? '' : 'onclick="rosterCheckIn(\'' + escAttr(a.email) + '\')"';
+    var isCheckedIn   = a.checkInStatus && a.checkInStatus.match(/CHECKED IN:/);
+    var isFullGiven   = a.bananasGiven >= a.totalSeats;
+    var isPartialGiven = a.bananasGiven > 0 && a.bananasGiven < a.totalSeats;
+
+    var rowClass = isFullGiven ? 'attendee-row given'
+                 : isPartialGiven ? 'attendee-row partial'
+                 : !isCheckedIn ? 'attendee-row not-checked-in'
+                 : 'attendee-row';
+
+    var tagClass, tagText, onclick;
+    if (isFullGiven) {
+      tagClass = 'bn-tag full';
+      tagText  = '🍌 ALL GIVEN';
+      onclick  = '';
+    } else if (!isCheckedIn) {
+      tagClass = 'bn-tag blocked';
+      tagText  = '🚫 NOT IN YET';
+      onclick  = '';
+    } else if (isPartialGiven) {
+      tagClass = 'bn-tag partial';
+      tagText  = a.bananasGiven + '/' + a.totalSeats + ' — GIVE';
+      onclick  = 'onclick="rosterGive(\'' + escAttr(a.email) + '\')"';
+    } else {
+      tagClass = 'bn-tag give';
+      tagText  = '🍌 GIVE';
+      onclick  = 'onclick="rosterGive(\'' + escAttr(a.email) + '\')"';
+    }
+
+    var bananaInfo = 'Seats: ' + a.totalSeats;
+    if (isCheckedIn) {
+      bananaInfo += ' · ' + (isFullGiven ? 'All given' : a.bananasGiven + ' given, ' + (a.totalSeats - a.bananasGiven) + ' remaining');
+    } else {
+      bananaInfo += ' · Not checked in at main door';
+    }
+
     return '<div class="' + rowClass + '">'
       + '<div class="attendee-info">'
         + '<div class="attendee-name">' + esc(a.name) + '</div>'
         + '<div class="attendee-email">' + esc(a.email) + '</div>'
-        + '<div class="attendee-seats">Seats: ' + a.totalSeats + (a.totalSeats > 1 ? ' · Group pass' : '') + '</div>'
+        + '<div class="attendee-seats">' + bananaInfo + '</div>'
       + '</div>'
       + '<span class="' + tagClass + '" ' + onclick + '>' + tagText + '</span>'
       + '</div>';
   }).join('');
 }
 
-function rosterCheckIn(email) {
+function rosterGive(email) {
   switchTab('scanner');
-  processCheckIn(email);
+  processBanana(email);
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -663,20 +743,21 @@ function saveWebhook() {
   var url = document.getElementById('webhook-url-input').value.trim();
   if (!url) { toast('Enter a URL', 'err'); return; }
   WEBHOOK_URL = url;
-  localStorage.setItem('fxw_maindoor_webhook', url);
+  localStorage.setItem('fxw_banana_webhook', url);
   document.getElementById('webhook-status').textContent = 'Testing…';
   apiPost({ action: 'getRoster' }, function(res) {
+    var statusEl = document.getElementById('webhook-status');
     if (res.success) {
-      document.getElementById('webhook-status').style.color = 'var(--green)';
-      document.getElementById('webhook-status').textContent = '✓ Connected — ' + (res.roster || []).length + ' attendee(s) found';
+      statusEl.style.color = 'var(--green)';
+      statusEl.textContent = '✓ Connected — ' + (res.roster || []).length + ' attendee(s) found';
       toast('Webhook connected!', 'ok');
       rosterData = res.roster || [];
-      updateCounter(res.totalCheckedIn, TOTAL_SEATS);
+      updateCounter(res.totalBananas);
       filterRoster();
       if (!_pollTimer) _pollTimer = setInterval(loadRoster, 30000);
     } else {
-      document.getElementById('webhook-status').style.color = 'var(--peach)';
-      document.getElementById('webhook-status').textContent = '✗ ' + (res.error || 'Connection failed');
+      statusEl.style.color = 'var(--peach)';
+      statusEl.textContent = '✗ ' + (res.error || 'Connection failed');
       toast('Connection failed', 'err');
     }
   });
@@ -692,7 +773,6 @@ function apiPost(body, cb) {
   var params = Object.keys(body).map(function(k) {
     return encodeURIComponent(k) + '=' + encodeURIComponent(JSON.stringify(body[k]));
   }).join('&');
-  // Try GET first (no preflight), fall back behaviour preserved via catch
   fetch(WEBHOOK_URL + (WEBHOOK_URL.indexOf('?') >= 0 ? '&' : '?') + params, {
     method: 'GET',
     mode: 'cors'
@@ -715,6 +795,29 @@ function apiPost(body, cb) {
       cb({ success: false, error: err2.toString() });
     });
   });
+}
+
+/* ══════════════════════════════════════════════════════════
+   BANANA BURST ANIMATION  🍌
+   ══════════════════════════════════════════════════════════ */
+function launchBananaBurst() {
+  var wrap = document.getElementById('banana-burst');
+  wrap.innerHTML = '';
+  wrap.classList.add('on');
+  for (var i = 0; i < 18; i++) {
+    var el = document.createElement('div');
+    el.className = 'bana';
+    el.textContent = '🍌';
+    el.style.setProperty('--bd', (1.2 + Math.random() * 1).toFixed(2) + 's');
+    el.style.setProperty('--bdd', (Math.random() * 0.5).toFixed(2) + 's');
+    el.style.setProperty('--br', (Math.random() > 0.5 ? 1 : -1) * (180 + Math.floor(Math.random() * 360)) + 'deg');
+    el.style.left = (Math.random() * 100) + 'vw';
+    wrap.appendChild(el);
+  }
+  setTimeout(function() {
+    wrap.innerHTML = '';
+    wrap.classList.remove('on');
+  }, 2800);
 }
 
 /* ══════════════════════════════════════════════════════════
