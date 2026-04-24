@@ -360,7 +360,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 /* ══════════════════════════════════════════════════════════
    CONFIG
    ══════════════════════════════════════════════════════════ */
-var WEBHOOK_URL = localStorage.getItem('fxw_webhook') || '';
+var WEBHOOK_URL = localStorage.getItem('fxw_maindoor_webhook') || '';
 var TOTAL_SEATS = 100;
 var COOLDOWN_MS = 2000;
 var rosterData  = [];       // full roster from server
@@ -375,7 +375,7 @@ var _pollTimer     = null;
    INIT
    ══════════════════════════════════════════════════════════ */
 window.addEventListener('DOMContentLoaded', function() {
-  var saved = localStorage.getItem('fxw_webhook');
+  var saved = localStorage.getItem('fxw_maindoor_webhook');
   if (saved) {
     document.getElementById('webhook-url-input').value = saved;
     WEBHOOK_URL = saved;
@@ -663,7 +663,7 @@ function saveWebhook() {
   var url = document.getElementById('webhook-url-input').value.trim();
   if (!url) { toast('Enter a URL', 'err'); return; }
   WEBHOOK_URL = url;
-  localStorage.setItem('fxw_webhook', url);
+  localStorage.setItem('fxw_maindoor_webhook', url);
   document.getElementById('webhook-status').textContent = 'Testing…';
   apiPost({ action: 'getRoster' }, function(res) {
     if (res.success) {
@@ -686,18 +686,34 @@ function saveWebhook() {
    API
    ══════════════════════════════════════════════════════════ */
 function apiPost(body, cb) {
-  fetch(WEBHOOK_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+  // Use GET with query params to avoid CORS preflight (OPTIONS) issues on GitHub Pages.
+  // Google Apps Script handles GET via doGet; POST via doPost requires the script
+  // to explicitly handle OPTIONS preflight which often fails.
+  var params = Object.keys(body).map(function(k) {
+    return encodeURIComponent(k) + '=' + encodeURIComponent(JSON.stringify(body[k]));
+  }).join('&');
+  // Try GET first (no preflight), fall back behaviour preserved via catch
+  fetch(WEBHOOK_URL + (WEBHOOK_URL.indexOf('?') >= 0 ? '&' : '?') + params, {
+    method: 'GET',
     mode: 'cors'
   })
   .then(function(r) { return r.json(); })
   .then(function(data) { cb(data); })
   .catch(function(err) {
-    setLoading(false);
-    toast('Network error: ' + err, 'err');
-    cb({ success: false, error: err.toString() });
+    // If GET fails, try POST (in case the script only has doPost)
+    fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(body),
+      mode: 'cors'
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) { cb(data); })
+    .catch(function(err2) {
+      setLoading(false);
+      toast('Network error – check webhook & CORS', 'err');
+      cb({ success: false, error: err2.toString() });
+    });
   });
 }
 
